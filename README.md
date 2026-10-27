@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Oh My Greece – Franchise
 
-## Getting Started
+Franchise landing page for Oh My Greece, built from the Figma design
+(TyloTech Design File, frame "Franchise Page — Oh My Greece"). Responsive from
+320 px to 1440 px+, with scroll animations and a 5-step application form that
+sends a team notification and an applicant confirmation email.
 
-First, run the development server:
+**Stack:** Next.js 16 (App Router, Cache Components) · React 19 · Tailwind CSS 4 ·
+Lenis smooth scrolling · Vitest · Playwright
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local   # optional in development
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. In development, application emails are printed to
+the server log instead of being sent.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Email
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The form posts to `POST /api/bewerbung`, which emails the team (`MAIL_TO`) and
+sends the applicant a confirmation. Choose a provider by setting **either**
+`RESEND_API_KEY` **or** `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` (see
+[.env.example](.env.example)). Without one, production answers `503` and the form
+shows a fallback with the contact address.
 
-## Learn More
+Preview both templates at **/email-preview** while running `pnpm dev`
+(desktop and phone width side by side). The route is a 404 in production.
 
-To learn more about Next.js, take a look at the following resources:
+Templates: `src/lib/email/` · Validation shared by form and API: `src/lib/application.ts`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Security
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Security headers incl. CSP, frame/clickjacking protection, HSTS (`next.config.ts`)
+- API: same-origin check, JSON only, 8 KB body cap (also for chunked uploads),
+  strict validation, honeypot + minimum fill time, CRLF-safe mail headers,
+  HTML-escaped templates
+- Rate limits: 5 / IP / 10 min, 2 confirmations / recipient / day
+  (anti email-bombing), 120 applications / hour overall
 
-## Deploy on Vercel
+Limits are kept in memory per server instance and the client IP comes from the
+proxy's `X-Forwarded-For` entry, so deploy behind a proxy/CDN (e.g. Vercel). For
+multiple instances, move the limiter to Redis/Upstash.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tests
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | What it runs |
+| --- | --- |
+| `pnpm test` | Unit + integration tests (validation, templates, rate limiter, API route) |
+| `pnpm test:e2e` | Playwright on desktop + mobile against `pnpm dev --port 3250` (uses the installed Chrome) |
+| `pnpm test:security [url]` | Attack probe against a running `next start` (default `http://localhost:3260`) |
+| `pnpm test:load [url] [concurrency] [requests]` | Many-users load test against a running server |
+
+## Design notes
+
+- The design's display font **Fineday Style Two** is a commercial font and isn't
+  bundled; **Kaushan Script** is used as the fallback. Add the licensed font
+  files with an `@font-face` for `"Fineday"` and it takes over automatically
+  (`--font-script` in `src/app/globals.css`).
+- Header and footer in the Figma file are screenshots of the live site; the logo
+  and footer wordmark were extracted from them. Replace with the original vector
+  files when available.
+- Figma shows step 1 of the form and the first FAQ answer only; the other form
+  steps and FAQ answers are drafts to be confirmed by Oh My Greece.
+- `Motion.tsx` must stay inside `page.tsx` (not the root layout) so it runs only
+  after the page content has hydrated.
