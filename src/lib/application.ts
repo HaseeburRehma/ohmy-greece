@@ -3,26 +3,39 @@
  * by the form (client) and /api/bewerbung (server) so both agree exactly.
  */
 
-export const EXPERIENCE_OPTIONS = ["Ja, mehrere Jahre", "Ja, ein wenig", "Nein, ich bin Quereinsteiger:in"] as const;
+// Wording as in the Figma form (OMG Franchise Bewerbung).
+export const CAPITAL_OPTIONS = [
+  "Unter 25.000 €",
+  "25.000 – 50.000 €",
+  "50.000 – 100.000 €",
+  "Über 100.000 €",
+  "Noch unklar / möchte ich besprechen",
+] as const;
+
+export const EXPERIENCE_OPTIONS = ["Ja, mehrere Jahre", "Etwas Erfahrung", "Keine – aber hohe Motivation (Quereinsteiger)"] as const;
 
 export const START_OPTIONS = [
   "So schnell wie möglich",
-  "In 3–6 Monaten",
+  "In den nächsten 3–6 Monaten",
   "In 6–12 Monaten",
-  "Ich informiere mich erst einmal",
+  "Erstmal nur informieren",
 ] as const;
 
-export const LIMITS = { city: 80, name: 100, email: 254, phone: 30 } as const;
+export const LIMITS = { city: 80, firstName: 60, lastName: 60, email: 254, phone: 30 } as const;
 
 export type Application = {
   city: string;
+  capital: string;
   experience: string;
   start: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   consent: boolean;
 };
+
+export const fullName = (a: Pick<Application, "firstName" | "lastName">) => `${a.firstName} ${a.lastName}`.trim();
 
 export type ApplicationErrors = Partial<Record<keyof Application, string>>;
 
@@ -45,13 +58,14 @@ export function validateStep(step: number, a: Application): ApplicationErrors {
     if (a.city.trim().length < 2) e.city = "Bitte gib eine Stadt oder PLZ an.";
     else if (!TEXT_RE.test(a.city.trim())) e.city = "Bitte nur Buchstaben, Zahlen und Leerzeichen verwenden.";
   }
-  if (step === 2 && !(EXPERIENCE_OPTIONS as readonly string[]).includes(a.experience)) e.experience = "Bitte wähle eine Option.";
-  if (step === 3 && !(START_OPTIONS as readonly string[]).includes(a.start)) e.start = "Bitte wähle eine Option.";
-  if (step === 4) {
-    if (a.name.trim().length < 2) e.name = "Bitte gib deinen Namen an.";
-    else if (!TEXT_RE.test(a.name.trim())) e.name = "Bitte gib einen gültigen Namen an.";
-  }
+  if (step === 2 && !(CAPITAL_OPTIONS as readonly string[]).includes(a.capital)) e.capital = "Bitte wähle eine Option.";
+  if (step === 3 && !(EXPERIENCE_OPTIONS as readonly string[]).includes(a.experience)) e.experience = "Bitte wähle eine Option.";
+  if (step === 4 && !(START_OPTIONS as readonly string[]).includes(a.start)) e.start = "Bitte wähle eine Option.";
   if (step === 5) {
+    if (a.firstName.trim().length < 1) e.firstName = "Bitte gib deinen Vornamen an.";
+    else if (!TEXT_RE.test(a.firstName.trim())) e.firstName = "Bitte gib einen gültigen Vornamen an.";
+    if (a.lastName.trim().length < 1) e.lastName = "Bitte gib deinen Nachnamen an.";
+    else if (!TEXT_RE.test(a.lastName.trim())) e.lastName = "Bitte gib einen gültigen Nachnamen an.";
     if (!EMAIL_RE.test(a.email.trim())) e.email = "Bitte gib eine gültige E-Mail-Adresse an.";
     if (!PHONE_RE.test(a.phone.trim()) || a.phone.replace(/\D/g, "").length < 6)
       e.phone = "Bitte gib eine gültige Telefonnummer an.";
@@ -68,9 +82,11 @@ export function parseApplication(raw: Record<string, unknown>):
   | { ok: false; errors: ApplicationErrors } {
   const data: Application = {
     city: clean(raw.city, LIMITS.city),
+    capital: clean(raw.capital, 60),
     experience: clean(raw.experience, 60),
     start: clean(raw.start, 60),
-    name: clean(raw.name, LIMITS.name),
+    firstName: clean(raw.firstName, LIMITS.firstName),
+    lastName: clean(raw.lastName, LIMITS.lastName),
     email: clean(raw.email, LIMITS.email).toLowerCase(),
     phone: clean(raw.phone, LIMITS.phone),
     consent: raw.consent === true,

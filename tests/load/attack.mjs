@@ -1,7 +1,6 @@
 // Security probe against a running server: node tests/load/attack.mjs [baseUrl]
 // Prints PASS/FAIL per check; exits 1 if anything fails.
 const BASE = process.argv[2] || "http://localhost:3260";
-const host = new URL(BASE).host;
 let failed = 0;
 const check = (name, ok, detail = "") => {
   if (!ok) failed++;
@@ -10,7 +9,7 @@ const check = (name, ok, detail = "") => {
 let ipN = 0;
 const ip = () => `192.0.2.${(ipN++ % 250) + 1}`;
 const valid = {
-  city: "Köln", experience: "Ja, ein wenig", start: "In 3–6 Monaten", name: "Test Person",
+  city: "Köln", capital: "Unter 25.000 €", experience: "Etwas Erfahrung", start: "In den nächsten 3–6 Monaten", firstName: "Test", lastName: "Person",
   email: "attack@example.com", phone: "+49 170 0000000", consent: true, website: "", elapsedMs: 20000,
 };
 const api = (body, headers = {}, raw) =>
@@ -39,7 +38,7 @@ check("text/plain CSRF-style POST → 415", (await api(null, { "content-type": "
 check("1 MB body → 413", (await api(null, {}, JSON.stringify({ ...valid, x: "a".repeat(1_000_000) }))).status === 413);
 check("broken JSON → 400", (await api(null, {}, "{")).status === 400);
 check("deeply nested JSON → 4xx, no crash", [400, 413, 422].includes((await api(null, {}, "[".repeat(5000) + "]".repeat(5000))).status));
-const xss = await api({ ...valid, name: "<script>alert(1)</script>", city: "javascript:alert(1)" });
+const xss = await api({ ...valid, firstName: "<script>alert(1)</script>", city: "javascript:alert(1)" });
 check("XSS payloads rejected → 422", xss.status === 422);
 const crlf = await api({ ...valid, email: "a@example.com\r\nBcc: victim@example.com" });
 check("CRLF in email rejected → 422", crlf.status === 422);

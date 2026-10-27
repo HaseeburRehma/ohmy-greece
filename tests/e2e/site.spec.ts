@@ -98,55 +98,97 @@ test("in-page CTA scrolls smoothly to the form", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => Math.round(document.querySelector("#bewerbung")!.getBoundingClientRect().top))).toBeLessThan(80);
 });
 
-test("application form: validation, keyboard choices, submit, success", async ({ page }) => {
+const visiblePhoto = (page: Page) =>
+  page.locator("#bewerbung [aria-hidden='false'] img").getAttribute("src").then((src) => decodeURIComponent(src ?? ""));
+
+test("application form: auto-advance, step photos, validation, submit, success", async ({ page, isMobile }) => {
   const errors = collectErrors(page);
   await page.goto("/#bewerbung");
   const form = page.locator("#bewerbung");
-  const next = form.getByRole("button", { name: "Weiter" });
+  const step = (n: number) => expect(form.getByText(`Schritt ${n} von 5`)).toBeVisible();
 
-  await next.click();
+  await form.getByRole("button", { name: "Weiter" }).click();
   await expect(form.getByText("Bitte gib eine Stadt oder PLZ an.")).toBeVisible();
+  if (!isMobile) expect(await visiblePhoto(page)).toContain("form-step-1");
 
+  // Step 1 continues on its own once the city is entered and the field is left.
   await form.getByLabel("Stadt / PLZ").fill("Düsseldorf");
-  await next.click();
+  await form.getByRole("heading", { level: 2 }).click();
+  await step(2);
+  await expect(form.getByText("Welches Eigenkapital kannst du für den Start einbringen?")).toBeVisible();
+  if (!isMobile) await expect.poll(() => visiblePhoto(page)).toContain("form-step-2");
 
+  // Picking an answer advances without pressing Weiter.
+  await form.getByRole("radio", { name: "25.000 – 50.000 €" }).click();
+  await step(3);
   await expect(form.getByText("Hast du bereits Erfahrung in der Gastronomie?")).toBeVisible();
-  await next.click();
-  await expect(form.getByRole("alert")).toHaveText("Bitte wähle eine Option.");
-  await form.getByRole("radio", { name: "Ja, ein wenig" }).click();
-  await next.click();
+  if (!isMobile) await expect.poll(() => visiblePhoto(page)).toContain("form-step-3");
 
-  await expect(form.getByText("Wann möchtest du starten?")).toBeVisible();
-  const firstOption = form.getByRole("radio", { name: "So schnell wie möglich" });
-  await firstOption.focus();
+  // Arrow keys only move the selection; Enter confirms and advances.
+  await form.getByRole("radio", { name: "Ja, mehrere Jahre" }).focus();
   await page.keyboard.press("ArrowDown");
-  await expect(form.getByRole("radio", { name: "In 3–6 Monaten" })).toHaveAttribute("aria-checked", "true");
+  await expect(form.getByRole("radio", { name: "Etwas Erfahrung" })).toHaveAttribute("aria-checked", "true");
+  await page.waitForTimeout(600);
+  await step(3);
   await page.keyboard.press("Enter");
+  await step(4);
 
-  await form.getByLabel("Vor- und Nachname").fill("Test Person");
-  await page.keyboard.press("Enter");
+  await form.getByRole("radio", { name: "In den nächsten 3–6 Monaten" }).click();
+  await step(5);
+  if (!isMobile) await expect.poll(() => visiblePhoto(page)).toContain("form-step-5");
 
-  // back and forward keeps answers
+  // Back keeps the answer, and choosing it again moves on.
   await form.getByRole("button", { name: "Zurück" }).click();
-  await expect(form.getByLabel("Vor- und Nachname")).toHaveValue("Test Person");
-  await next.click();
+  await step(4);
+  await expect(form.getByRole("radio", { name: "In den nächsten 3–6 Monaten" })).toHaveAttribute("aria-checked", "true");
+  await form.getByRole("radio", { name: "In den nächsten 3–6 Monaten" }).click();
+  await step(5);
 
-  await form.getByLabel("E-Mail").fill("not-an-email");
-  await form.getByLabel("Telefon").fill("+49 170 0000000");
-  await form.getByRole("button", { name: "Jetzt eintragen" }).click();
+  const cta = form.getByRole("button", { name: "Kostenlos mehr erfahren – jetzt eintragen" });
+  await form.getByLabel("Vorname *").fill("Test");
+  await form.getByLabel("E-Mail *").fill("not-an-email");
+  await form.getByLabel("Telefon / WhatsApp *").fill("+49 170 0000000");
+  await cta.click();
+  await expect(form.getByText("Bitte gib deinen Nachnamen an.")).toBeVisible();
   await expect(form.getByText("Bitte gib eine gültige E-Mail-Adresse an.")).toBeVisible();
   await expect(form.getByText("Bitte stimme der Kontaktaufnahme zu.")).toBeVisible();
+  await step(5); // the last step never submits by itself
 
-  await form.getByLabel("E-Mail").fill(`e2e+${Date.now()}@example.com`);
+  await form.getByLabel("Nachname *").fill("Person");
+  await form.getByLabel("E-Mail *").fill(`e2e+${Date.now()}@example.com`);
   await form.getByRole("checkbox").check();
   // the API rejects forms "completed" in under 3 s as bots
   await page.waitForTimeout(3000);
   const response = page.waitForResponse("**/api/bewerbung");
-  await form.getByRole("button", { name: "Jetzt eintragen" }).click();
-  expect((await response).status()).toBe(200);
-  await expect(form.getByRole("status")).toContainText("Danke, Test!");
-  await expect(form.getByRole("status")).toContainText("Düsseldorf");
+  await cta.click();
+  const res = await response;
+  expect(res.status()).toBe(200);
+  expect(res.request().postDataJSON()).toMatchObject({
+    city: "Düsseldorf",
+    capital: "25.000 – 50.000 €",
+    experience: "Etwas Erfahrung",
+    start: "In den nächsten 3–6 Monaten",
+    firstName: "Test",
+    lastName: "Person",
+  });
+  await expect(form.getByRole("status")).toContainText("Danke!");
+  await expect(form.getByRole("status")).toContainText("Prüf schon mal dein Postfach.");
+  if (!isMobile) await expect.poll(() => visiblePhoto(page)).toContain("form-done");
+  else await expect(form.getByRole("img", { name: /Griechische Platte/ })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("Zurück cancels a pending auto-advance", async ({ page }) => {
+  await page.goto("/#bewerbung");
+  const form = page.locator("#bewerbung");
+  await form.getByLabel("Stadt / PLZ").fill("Köln");
+  await page.keyboard.press("Enter");
+  await form.getByRole("radio", { name: "Unter 25.000 €" }).click();
+  await form.getByRole("radio", { name: "Ja, mehrere Jahre" }).click();
+  // go back within the advance delay; the timer from step 3 must not push us forward again
+  await form.getByRole("button", { name: "Zurück" }).click();
+  await page.waitForTimeout(800);
+  await expect(form.getByText("Schritt 2 von 5")).toBeVisible();
 });
 
 test("form shows a fallback message when the server fails", async ({ page }) => {
@@ -155,18 +197,18 @@ test("form shows a fallback message when the server fails", async ({ page }) => 
   const form = page.locator("#bewerbung");
   await form.getByLabel("Stadt / PLZ").fill("Köln");
   await page.keyboard.press("Enter");
+  await form.getByRole("radio", { name: "Über 100.000 €" }).click();
   await form.getByRole("radio", { name: "Ja, mehrere Jahre" }).click();
-  await form.getByRole("button", { name: "Weiter" }).click();
   await form.getByRole("radio", { name: "So schnell wie möglich" }).click();
-  await form.getByRole("button", { name: "Weiter" }).click();
-  await form.getByLabel("Vor- und Nachname").fill("Test Person");
-  await page.keyboard.press("Enter");
-  await form.getByLabel("E-Mail").fill("t@example.com");
-  await form.getByLabel("Telefon").fill("0221 123456");
+  await form.getByLabel("Vorname *").fill("Test");
+  await form.getByLabel("Nachname *").fill("Person");
+  await form.getByLabel("E-Mail *").fill("t@example.com");
+  await form.getByLabel("Telefon / WhatsApp *").fill("0221 123456");
   await form.getByRole("checkbox").check();
-  await form.getByRole("button", { name: "Jetzt eintragen" }).click();
+  const cta = form.getByRole("button", { name: /jetzt eintragen/ });
+  await cta.click();
   await expect(form.getByRole("alert")).toContainText("info@ohmygreece.de");
-  await expect(form.getByRole("button", { name: "Jetzt eintragen" })).toBeEnabled();
+  await expect(cta).toBeEnabled();
 });
 
 test("email preview gallery renders both templates (dev only)", async ({ page }) => {

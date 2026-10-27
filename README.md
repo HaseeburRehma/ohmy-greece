@@ -63,7 +63,9 @@ multiple instances, move the limiter to Redis/Upstash.
 - Header and footer in the Figma file are screenshots of the live site; the logo
   and footer wordmark were extracted from them. Replace with the original vector
   files when available.
-- Figma shows step 1 of the form and the first FAQ answer only; the other form
-  steps and FAQ answers are drafts to be confirmed by Oh My Greece.
+- The form follows the Figma "OMG Franchise Bewerbung" frames (desktop + mobile):
+  five steps with their own photo each, plus the "Danke" screen. Answers on the
+  choice steps auto-advance; step 1 continues on Enter or when the field is left.
+  FAQ answers 2–8 are drafts to be confirmed by Oh My Greece.
 - `Motion.tsx` must stay inside `page.tsx` (not the root layout) so it runs only
   after the page content has hydrated.

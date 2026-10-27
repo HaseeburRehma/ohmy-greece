@@ -40,7 +40,7 @@ const imgs = await run("GET /_next/image hero", 600, 60, () =>
 );
 
 const valid = {
-  city: "Köln", experience: "Ja, ein wenig", start: "In 3–6 Monaten", name: "Load Test",
+  city: "Köln", capital: "Unter 25.000 €", experience: "Etwas Erfahrung", start: "In den nächsten 3–6 Monaten", firstName: "Load", lastName: "Test",
   phone: "+49 170 0000000", consent: true, website: "", elapsedMs: 20000,
 };
 const flood = await run("POST /api/bewerbung (1000 IPs)", 1000, 100, (i) =>

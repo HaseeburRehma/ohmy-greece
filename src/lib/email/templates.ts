@@ -2,11 +2,8 @@
  * Franchise application emails: a notification to the team and a
  * confirmation to the applicant. Layout and building blocks live in ./layout.
  */
-import type { Application } from "@/lib/application";
+import { fullName, type Application } from "@/lib/application";
 import { SITE, button, details, emailShell, esc, eyebrow, heading, paragraph, signoff, steps } from "./layout";
-
-/** "Nikos Papadopoulos" → "Nikos", for the greeting. */
-const firstName = (name: string) => name.split(/\s+/)[0] || name;
 
 const NEXT_STEPS = [
   "Wir schauen uns deine Angaben in Ruhe an.",
@@ -21,27 +18,29 @@ const formatDate = (d: Date) =>
 
 /** Notification to the Oh My Greece team. */
 export function teamEmail(d: Application, { site = SITE, receivedAt = new Date() }: Opts = {}) {
+  const name = fullName(d);
   const tel = d.phone.replace(/[^\d+]/g, "");
   const body = `
     ${eyebrow("Neue Bewerbung")}
     ${heading("Neue Franchise&#8209;Anfrage")}
-    ${paragraph(`<strong>${esc(d.name)}</strong> möchte einen Oh My Greece Store in <strong>${esc(d.city)}</strong> eröffnen.`)}
+    ${paragraph(`<strong>${esc(name)}</strong> möchte einen Oh My Greece Store in <strong>${esc(d.city)}</strong> eröffnen.`)}
     ${details("Kontakt", [
-      ["Name", d.name],
+      ["Name", name],
       ["E-Mail", d.email, `mailto:${d.email}`],
       ["Telefon", d.phone, `tel:${tel}`],
     ])}
     ${details("Angaben", [
       ["Stadt / Region", d.city],
+      ["Eigenkapital", d.capital],
       ["Gastro-Erfahrung", d.experience],
       ["Start", d.start],
       ["Eingegangen", formatDate(receivedAt)],
     ])}
-    ${button(`${firstName(d.name)} antworten`, `mailto:${d.email}?subject=${encodeURIComponent("Dein Oh My Greece Store")}`)}
+    ${button(`${d.firstName} antworten`, `mailto:${d.email}?subject=${encodeURIComponent("Dein Oh My Greece Store")}`)}
     ${paragraph("Antworten auf diese E-Mail gehen direkt an die Bewerberin oder den Bewerber. Versprochen auf der Website: Rückmeldung innerhalb von 24 Stunden.", { muted: true, size: 13 })}`;
   return emailShell({
     title: "Neue Franchise-Anfrage",
-    preheader: `${d.name} · ${d.city} · ${d.start}`,
+    preheader: `${name} · ${d.city} · ${d.start}`,
     body,
     audience: "team",
     site,
@@ -52,7 +51,7 @@ export function teamEmail(d: Application, { site = SITE, receivedAt = new Date()
 export function applicantEmail(d: Application, { site = SITE }: Opts = {}) {
   const body = `
     ${eyebrow("Anfrage erhalten")}
-    ${heading(`Danke, ${esc(firstName(d.name))}!`)}
+    ${heading(`Danke, ${esc(d.firstName)}!`)}
     ${paragraph(`Schön, dass du Teil der Oh My Greece Familie werden möchtest. Wir haben deine Anfrage für <strong>${esc(d.city)}</strong> erhalten und melden uns innerhalb von 24 Stunden bei dir.`)}
     ${steps("So geht es weiter", NEXT_STEPS)}
     ${details("Deine Angaben", [
@@ -73,21 +72,23 @@ export function applicantEmail(d: Application, { site = SITE }: Opts = {}) {
 }
 
 export function teamText(d: Application, { receivedAt = new Date() }: Opts = {}) {
+  const name = fullName(d);
   return `Neue Franchise-Anfrage
 
-${d.name} möchte einen Oh My Greece Store in ${d.city} eröffnen.
+${name} möchte einen Oh My Greece Store in ${d.city} eröffnen.
 
-Name: ${d.name}
+Name: ${name}
 E-Mail: ${d.email}
 Telefon: ${d.phone}
 Stadt / Region: ${d.city}
+Eigenkapital: ${d.capital}
 Gastro-Erfahrung: ${d.experience}
 Start: ${d.start}
 Eingegangen: ${formatDate(receivedAt)}`;
 }
 
 export function applicantText(d: Application, { site = SITE }: Opts = {}) {
-  return `Danke, ${firstName(d.name)}!
+  return `Danke, ${d.firstName}!
 
 Wir haben deine Anfrage für ${d.city} erhalten und melden uns innerhalb von 24 Stunden bei dir.
 
@@ -110,9 +111,11 @@ ${site}`;
 /** Sample data for the dev preview and tests. */
 export const SAMPLE_APPLICATION: Application = {
   city: "Düsseldorf",
-  experience: "Ja, ein wenig",
-  start: "In 3–6 Monaten",
-  name: "Nikos Papadopoulos",
+  capital: "25.000 – 50.000 €",
+  experience: "Etwas Erfahrung",
+  start: "In den nächsten 3–6 Monaten",
+  firstName: "Nikos",
+  lastName: "Papadopoulos",
   email: "nikos@example.com",
   phone: "+49 170 1234567",
   consent: true,

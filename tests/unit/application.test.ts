@@ -3,9 +3,11 @@ import { clean, parseApplication, validateStep, type Application } from "@/lib/a
 
 const valid: Application = {
   city: "Düsseldorf",
-  experience: "Ja, ein wenig",
-  start: "In 3–6 Monaten",
-  name: "Nikos Papadopoulos",
+  capital: "25.000 – 50.000 €",
+  experience: "Etwas Erfahrung",
+  start: "In den nächsten 3–6 Monaten",
+  firstName: "Nikos",
+  lastName: "Papadopoulos",
   email: "nikos@example.com",
   phone: "+49 170 1234567",
   consent: true,
@@ -19,18 +21,20 @@ describe("validateStep", () => {
   it("accepts PLZ, umlauts, accents and hyphenated names", () => {
     expect(validateStep(1, { ...valid, city: "40210" })).toEqual({});
     expect(validateStep(1, { ...valid, city: "Frankfurt am Main" })).toEqual({});
-    expect(validateStep(4, { ...valid, name: "Zoë Müller-Lüdenscheidt" })).toEqual({});
-    expect(validateStep(4, { ...valid, name: "Ali O'Neil" })).toEqual({});
+    expect(validateStep(5, { ...valid, lastName: "Müller-Lüdenscheidt", firstName: "Zoë" })).toEqual({});
+    expect(validateStep(5, { ...valid, lastName: "O'Neil" })).toEqual({});
   });
 
   it("rejects markup and script in free-text fields", () => {
     expect(validateStep(1, { ...valid, city: "<script>alert(1)</script>" }).city).toBeTruthy();
-    expect(validateStep(4, { ...valid, name: '"><img src=x onerror=alert(1)>' }).name).toBeTruthy();
+    expect(validateStep(5, { ...valid, firstName: '"><img src=x onerror=alert(1)>' }).firstName).toBeTruthy();
+    expect(validateStep(5, { ...valid, lastName: "<b>x</b>" }).lastName).toBeTruthy();
   });
 
   it("rejects options that are not on the form", () => {
-    expect(validateStep(2, { ...valid, experience: "Ja" }).experience).toBeTruthy();
-    expect(validateStep(3, { ...valid, start: "morgen" }).start).toBeTruthy();
+    expect(validateStep(2, { ...valid, capital: "1 Mio" }).capital).toBeTruthy();
+    expect(validateStep(3, { ...valid, experience: "Ja" }).experience).toBeTruthy();
+    expect(validateStep(4, { ...valid, start: "morgen" }).start).toBeTruthy();
   });
 
   it("validates contact details and consent", () => {
@@ -40,6 +44,8 @@ describe("validateStep", () => {
     expect(validateStep(5, { ...valid, phone: "12" }).phone).toBeTruthy();
     expect(validateStep(5, { ...valid, phone: "call me maybe" }).phone).toBeTruthy();
     expect(validateStep(5, { ...valid, consent: false }).consent).toBeTruthy();
+    expect(validateStep(5, { ...valid, firstName: " " }).firstName).toBeTruthy();
+    expect(validateStep(5, { ...valid, lastName: "" }).lastName).toBeTruthy();
   });
 });
 
@@ -73,7 +79,7 @@ describe("parseApplication", () => {
   it("reports every invalid field at once", () => {
     const r = parseApplication({});
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["city", "consent", "email", "experience", "name", "phone", "start"]);
+    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["capital", "city", "consent", "email", "experience", "firstName", "lastName", "phone", "start"]);
   });
 
   it("ignores unknown and prototype-polluting keys", () => {
@@ -85,8 +91,8 @@ describe("parseApplication", () => {
   });
 
   it("rejects over-long values after trimming them to the limit", () => {
-    const r = parseApplication({ ...valid, name: "A".repeat(10_000) });
+    const r = parseApplication({ ...valid, lastName: "A".repeat(10_000) });
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.data.name.length).toBeLessThanOrEqual(100);
+    if (r.ok) expect(r.data.lastName.length).toBeLessThanOrEqual(60);
   });
 });

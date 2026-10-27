@@ -1,4 +1,4 @@
-import { parseApplication } from "@/lib/application";
+import { fullName, parseApplication } from "@/lib/application";
 import { address, mailTransport, sendMail, teamInbox } from "@/lib/email/mailer";
 import { applicantEmail, applicantText, teamEmail, teamText } from "@/lib/email/templates";
 import { clientIp, createRateLimiter } from "@/lib/rate-limit";
@@ -97,8 +97,8 @@ export async function POST(req: Request) {
   try {
     await sendMail({
       to: teamInbox(),
-      replyTo: address(app.name, app.email),
-      subject: `Neue Franchise-Anfrage – ${app.name} (${app.city})`,
+      replyTo: address(fullName(app), app.email),
+      subject: `Neue Franchise-Anfrage – ${fullName(app)} (${app.city})`,
       html: teamEmail(app, { receivedAt }),
       text: teamText(app, { receivedAt }),
     });
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
   if (sendConfirmation) {
     try {
       await sendMail({
-        to: address(app.name, app.email),
+        to: address(fullName(app), app.email),
         replyTo: teamInbox(),
         subject: "Deine Oh My Greece Franchise-Anfrage ist da",
         html: applicantEmail(app),

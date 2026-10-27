@@ -22,7 +22,8 @@ describe("templates", () => {
   // Bypass validation on purpose: templates must stay safe even if it regresses.
   const hostile = {
     ...SAMPLE_APPLICATION,
-    name: "<script>alert(1)</script> Eve",
+    firstName: "<script>alert(1)</script>",
+    lastName: "Eve<b>",
     city: '"><img src=x onerror=alert(1)>',
   };
 
@@ -49,7 +50,7 @@ describe("templates", () => {
 
   it("has plain-text parts with every field", () => {
     const t = teamText(SAMPLE_APPLICATION);
-    for (const v of ["Nikos Papadopoulos", "nikos@example.com", "+49 170 1234567", "Düsseldorf", "Ja, ein wenig", "In 3–6 Monaten"])
+    for (const v of ["Nikos Papadopoulos", "nikos@example.com", "+49 170 1234567", "Düsseldorf", "Etwas Erfahrung", "In den nächsten 3–6 Monaten", "25.000 – 50.000 €"])
       expect(t).toContain(v);
     expect(applicantText(SAMPLE_APPLICATION)).toContain("Danke, Nikos!");
   });

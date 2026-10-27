@@ -21,9 +21,11 @@ const freshIp = () => `203.0.113.${++ipCounter}`;
 
 const valid = {
   city: "Düsseldorf",
-  experience: "Ja, ein wenig",
-  start: "In 3–6 Monaten",
-  name: "Nikos Papadopoulos",
+  capital: "25.000 – 50.000 €",
+  experience: "Etwas Erfahrung",
+  start: "In den nächsten 3–6 Monaten",
+  firstName: "Nikos",
+  lastName: "Papadopoulos",
   email: "nikos@example.com",
   phone: "+49 170 1234567",
   consent: true,
@@ -117,14 +119,14 @@ describe("POST /api/bewerbung", () => {
   });
 
   it("returns 422 with the failing fields for invalid data", async () => {
-    const res = await post({ ...valid, email: "bad", experience: "hacker", city: "<script>" });
+    const res = await post({ ...valid, email: "bad", capital: "alles", city: "<script>" });
     expect(res.status).toBe(422);
-    expect((await res.json()).fields.sort()).toEqual(["city", "email", "experience"]);
+    expect((await res.json()).fields.sort()).toEqual(["capital", "city", "email"]);
     expect(sent).toHaveLength(0);
   });
 
   it("neutralises CRLF header-injection attempts", async () => {
-    const res = await post({ ...valid, name: "Eve\r\nBcc: victim@example.com", email: "eve2@example.com" });
+    const res = await post({ ...valid, lastName: "Eve\r\nBcc: victim@example.com", email: "eve2@example.com" });
     // the name contains a ':' after cleaning, which the name rule rejects
     expect(res.status).toBe(422);
     expect(sent).toHaveLength(0);
