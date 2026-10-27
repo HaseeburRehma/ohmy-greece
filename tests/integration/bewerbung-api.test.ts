@@ -1,18 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sent: { to: string; subject: string; replyTo?: string; html: string }[] = [];
+const rows: { sheet: string; row: Record<string, string> }[] = [];
 let failTeamMail = false;
+let mailOn = true;
+let sheet: "saved" | "not_configured" | "failed" = "not_configured";
 
 vi.mock("@/lib/email/mailer", async (orig) => {
   const real = await orig<typeof import("@/lib/email/mailer")>();
   return {
     ...real,
+    mailTransport: () => (mailOn ? "log" : null),
     sendMail: vi.fn(async (m: (typeof sent)[number]) => {
       if (failTeamMail && m.subject.startsWith("Neue")) throw new Error("smtp down");
       sent.push(m);
     }),
   };
 });
+
+vi.mock("@/lib/lead-sheet", () => ({
+  sheetConfigured: () => sheet !== "not_configured",
+  appendLead: vi.fn(async (name: string, row: Record<string, string>) => {
+    if (sheet === "saved") rows.push({ sheet: name, row });
+    return sheet;
+  }),
+}));
 
 const { POST } = await import("@/app/api/bewerbung/route");
 
@@ -51,7 +63,10 @@ function post(body: unknown, { headers = {}, ip = freshIp(), raw }: { headers?: 
 
 beforeEach(() => {
   sent.length = 0;
+  rows.length = 0;
   failTeamMail = false;
+  mailOn = true;
+  sheet = "not_configured";
 });
 
 describe("POST /api/bewerbung", () => {
@@ -158,5 +173,56 @@ describe("POST /api/bewerbung", () => {
     failTeamMail = true;
     const res = await post({ ...valid, email: "fail@example.com" });
     expect(res.status).toBe(502);
+  });
+
+  it("writes every answer to the Google Sheet as well", async () => {
+    sheet = "saved";
+    const res = await post({ ...valid, email: "sheet1@example.com" });
+    expect(res.status).toBe(200);
+    expect(rows).toEqual([
+      {
+        sheet: "Bewerbungen",
+        row: {
+          Vorname: "Nikos",
+          Nachname: "Papadopoulos",
+          "E-Mail": "sheet1@example.com",
+          "Telefon / WhatsApp": "+49 170 1234567",
+          "Stadt / Region": "Düsseldorf",
+          Eigenkapital: "25.000 – 50.000 €",
+          "Gastro-Erfahrung": "Etwas Erfahrung",
+          Start: "In den nächsten 3–6 Monaten",
+          Einwilligung: "Ja",
+        },
+      },
+    ]);
+    expect(sent).toHaveLength(2);
+  });
+
+  it("still accepts the lead when the email fails but the sheet saved it", async () => {
+    sheet = "saved";
+    failTeamMail = true;
+    const res = await post({ ...valid, email: "sheet2@example.com" });
+    expect(res.status).toBe(200);
+    expect(rows).toHaveLength(1);
+  });
+
+  it("accepts the lead with only the sheet configured (no confirmation email)", async () => {
+    sheet = "saved";
+    mailOn = false;
+    const res = await post({ ...valid, email: "sheet3@example.com" });
+    expect(res.status).toBe(200);
+    expect(sent).toHaveLength(0);
+    expect(rows).toHaveLength(1);
+  });
+
+  it("returns 502 when both the email and the sheet fail", async () => {
+    sheet = "failed";
+    failTeamMail = true;
+    expect((await post({ ...valid, email: "both@example.com" })).status).toBe(502);
+  });
+
+  it("returns 503 when neither mail nor sheet is configured", async () => {
+    mailOn = false;
+    expect((await post({ ...valid, email: "none@example.com" })).status).toBe(503);
   });
 });

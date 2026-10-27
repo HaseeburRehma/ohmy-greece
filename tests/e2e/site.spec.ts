@@ -179,15 +179,21 @@ test("application form: auto-advance, step photos, validation, submit, success",
 });
 
 test("Zurück cancels a pending auto-advance", async ({ page }) => {
+  // Freeze page time so the advance timer only runs when the test says so,
+  // however slow the machine is between two clicks.
+  await page.clock.install();
   await page.goto("/#bewerbung");
+  await page.clock.pauseAt(Date.now() + 60_000);
   const form = page.locator("#bewerbung");
   await form.getByLabel("Stadt / PLZ").fill("Köln");
   await page.keyboard.press("Enter");
   await form.getByRole("radio", { name: "Unter 25.000 €" }).click();
+  await page.clock.runFor(500);
+  await expect(form.getByText("Schritt 3 von 5")).toBeVisible();
   await form.getByRole("radio", { name: "Ja, mehrere Jahre" }).click();
-  // go back within the advance delay; the timer from step 3 must not push us forward again
+  // back while step 3's advance is still pending; it must not push us forward again
   await form.getByRole("button", { name: "Zurück" }).click();
-  await page.waitForTimeout(800);
+  await page.clock.runFor(1000);
   await expect(form.getByText("Schritt 2 von 5")).toBeVisible();
 });
 

@@ -8,7 +8,10 @@
  */
 
 /** Public site origin, used for logo/image URLs and links inside emails. */
-export const SITE = (process.env.SITE_URL || "https://www.ohmygreece.de").replace(/\/$/, "");
+// SITE_URL wins; on Vercel the production domain is known without it (needs
+// "System Environment Variables" enabled, which is the default).
+const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+export const SITE = (process.env.SITE_URL || vercelUrl || "https://ohmy-greece.vercel.app").replace(/\/$/, "");
 
 const C = {
   burgundy: "#3b001b",

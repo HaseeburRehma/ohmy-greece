@@ -28,7 +28,7 @@ export function mailTransport(): "resend" | "smtp" | "log" | null {
   return process.env.NODE_ENV === "production" ? null : "log";
 }
 
-export const teamInbox = () => env("MAIL_TO") || "info@ohmygreece.de";
+export const teamInbox = () => env("MAIL_TO") || "info@tylotech.de";
 
 const sender = () => env("EMAIL_FROM") || "Oh My Greece <onboarding@resend.dev>";
 

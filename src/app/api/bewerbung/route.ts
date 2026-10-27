@@ -1,6 +1,7 @@
 import { fullName, parseApplication } from "@/lib/application";
 import { address, mailTransport, sendMail, teamInbox } from "@/lib/email/mailer";
 import { applicantEmail, applicantText, teamEmail, teamText } from "@/lib/email/templates";
+import { appendLead, sheetConfigured } from "@/lib/lead-sheet";
 import { clientIp, createRateLimiter } from "@/lib/rate-limit";
 
 /**
@@ -9,8 +10,12 @@ import { clientIp, createRateLimiter } from "@/lib/rate-limit";
  * Defences: same-origin check, JSON-only, 8 KB body cap, per-IP rate limit,
  * honeypot + minimum fill time for bots, strict server-side validation of
  * every field (options must match the form), header-safe addresses and
- * HTML-escaped emails. Sends a team notification and an applicant
- * confirmation via src/lib/email/mailer.ts.
+ * HTML-escaped emails.
+ *
+ * Every application goes two ways at once: a team email (src/lib/email/mailer.ts)
+ * and a row in the Google Sheet (src/lib/lead-sheet.ts). It counts as received
+ * if either works, so one outage never loses a lead. The applicant gets a
+ * confirmation email when mail is configured.
  */
 
 const MAX_BODY = 8 * 1024;
@@ -88,29 +93,49 @@ export async function POST(req: Request) {
   if (!overall("all").ok) return json({ error: "rate_limited" }, 429, { "Retry-After": "600" });
   const sendConfirmation = perRecipient(app.email).ok;
 
-  if (!mailTransport()) {
-    console.error("[bewerbung] mail is not configured; application from", app.city);
+  const mail = mailTransport();
+  if (!mail && !sheetConfigured()) {
+    console.error("[bewerbung] neither mail nor sheet is configured; application from", app.city);
     return json({ error: "not_configured" }, 503);
   }
 
   const receivedAt = new Date();
-  try {
-    await sendMail({
-      to: teamInbox(),
-      replyTo: address(fullName(app), app.email),
-      subject: `Neue Franchise-Anfrage – ${fullName(app)} (${app.city})`,
-      html: teamEmail(app, { receivedAt }),
-      text: teamText(app, { receivedAt }),
-    });
-  } catch (err) {
-    console.error("[bewerbung] team email failed:", (err as Error).message);
-    return json({ error: "send_failed" }, 502);
-  }
+  const name = fullName(app);
+  const [mailed, sheet] = await Promise.all([
+    mail
+      ? sendMail({
+          to: teamInbox(),
+          replyTo: address(name, app.email),
+          subject: `Neue Franchise-Anfrage – ${name} (${app.city})`,
+          html: teamEmail(app, { receivedAt }),
+          text: teamText(app, { receivedAt }),
+        }).then(
+          () => true,
+          (err: Error) => {
+            console.error("[bewerbung] team email failed:", err.message);
+            return false;
+          },
+        )
+      : false,
+    appendLead("Bewerbungen", {
+      Vorname: app.firstName,
+      Nachname: app.lastName,
+      "E-Mail": app.email,
+      "Telefon / WhatsApp": app.phone,
+      "Stadt / Region": app.city,
+      Eigenkapital: app.capital,
+      "Gastro-Erfahrung": app.experience,
+      Start: app.start,
+      Einwilligung: "Ja",
+    }),
+  ]);
 
-  if (sendConfirmation) {
+  if (!mailed && sheet !== "saved") return json({ error: "send_failed" }, 502);
+
+  if (mail && sendConfirmation) {
     try {
       await sendMail({
-        to: address(fullName(app), app.email),
+        to: address(name, app.email),
         replyTo: teamInbox(),
         subject: "Deine Oh My Greece Franchise-Anfrage ist da",
         html: applicantEmail(app),

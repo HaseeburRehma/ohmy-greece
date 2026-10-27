@@ -19,15 +19,26 @@ pnpm dev
 Open http://localhost:3000. In development, application emails are printed to
 the server log instead of being sent.
 
-## Email
+## Applications: email + Google Sheet
 
-The form posts to `POST /api/bewerbung`, which emails the team (`MAIL_TO`) and
-sends the applicant a confirmation. Choose a provider by setting **either**
-`RESEND_API_KEY` **or** `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` (see
-[.env.example](.env.example)). Without one, production answers `503` and the form
-shows a fallback with the contact address.
+Every application (`POST /api/bewerbung`) goes two ways at once:
 
-Preview both templates at **/email-preview** while running `pnpm dev`
+1. **Email** to the team (`MAIL_TO`, default `info@tylotech.de`) plus a
+   confirmation to the applicant, via Resend (`RESEND_API_KEY`) or SMTP
+   (`SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`). The domain in `EMAIL_FROM` must be
+   verified with the provider.
+2. **Google Sheet**: one row per application in the "Bewerbungen" tab, through a
+   small Apps Script (`LEADS_SHEET_URL`, `LEADS_SHEET_SECRET`). Setup steps are
+   at the top of [`scripts/google-sheet-leads.gs`](scripts/google-sheet-leads.gs);
+   no Google credentials live on the server.
+
+An application counts as received if either channel works. With neither
+configured, production answers `503` and the form shows its fallback with the
+contact address. All variables: [.env.example](.env.example). On Vercel,
+links and the logo inside emails point at the project's production domain
+unless `SITE_URL` is set.
+
+Preview both email templates at **/email-preview** while running `pnpm dev`
 (desktop and phone width side by side). The route is a 404 in production.
 
 Templates: `src/lib/email/` · Validation shared by form and API: `src/lib/application.ts`
@@ -49,7 +60,7 @@ multiple instances, move the limiter to Redis/Upstash.
 
 | Command | What it runs |
 | --- | --- |
-| `pnpm test` | Unit + integration tests (validation, templates, rate limiter, API route) |
+| `pnpm test` | Unit + integration tests (validation, templates, rate limiter, sheet client, API route) |
 | `pnpm test:e2e` | Playwright on desktop + mobile against `pnpm dev --port 3250` (uses the installed Chrome) |
 | `pnpm test:security [url]` | Attack probe against a running `next start` (default `http://localhost:3260`) |
 | `pnpm test:load [url] [concurrency] [requests]` | Many-users load test against a running server |
