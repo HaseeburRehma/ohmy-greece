@@ -1,0 +1,7 @@
+{
+  // Type-checks the Framer entry (framer/) after scripts/build-framer.mjs has generated its CSS
+  // module; the Next app's tsconfig leaves framer/ out because that file is not committed.
+  "extends": "./tsconfig.json",
+  "include": ["framer/**/*.ts", "framer/**/*.tsx", "src/components/**/*.tsx", "src/lib/**/*.ts"],
+  "exclude": ["node_modules", "framer/dist"]
+}

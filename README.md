@@ -43,6 +43,28 @@ Preview both email templates at **/email-preview** while running `pnpm dev`
 
 Templates: `src/lib/email/` · Validation shared by form and API: `src/lib/application.ts`
 
+## Framer (www.ohmygreece.de/franchise)
+
+The live site runs on Framer. The same sections are shipped there as one Framer
+code component, **OMGFranchise** (Assets → OMGFranchise.tsx), placed between the
+site's own nav and footer. Texts, lists, photos and the film are editable in its
+properties panel; values left at the design copy keep the hand-tuned line breaks.
+
+To ship a code change to Framer:
+
+```bash
+pnpm build:framer          # → framer/dist/OMGFranchise.tsx (also type-checks framer/)
+```
+
+Open OMGFranchise.tsx in Framer, select all, paste the new file, save (⌘S).
+
+- Breakpoints inside the component are container queries, so Framer's Desktop
+  and Phone frames render correctly on the canvas.
+- Photos, the film and the form API come from this Vercel deployment
+  (`framer/config.ts`); `/api/bewerbung` allows ohmygreece.de and Framer preview
+  origins via CORS (`ALLOWED_ORIGINS` overrides the domain list).
+- The script font is the licensed Fineday file already uploaded to the Framer site.
+
 ## Security
 
 - Security headers incl. CSP, frame/clickjacking protection, HSTS (`next.config.ts`)
