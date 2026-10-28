@@ -109,9 +109,6 @@ export default function HeroVideo() {
               Mit Ton ansehen
             </button>
           )}
-          <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-burgundy/70 px-3 py-1 text-[11px] font-semibold tracking-[0.04em] text-white backdrop-blur-sm sm:left-5 sm:top-5 sm:text-xs">
-            3 Min. · Das Konzept
-          </span>
         </>
       )}
     </div>

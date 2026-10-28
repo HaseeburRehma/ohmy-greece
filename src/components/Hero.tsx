@@ -1,6 +1,6 @@
 import CountUp from "./CountUp";
 import HeroVideo from "./HeroVideo";
-import { Container, CtaText, OpaBadge, PillButton, delay } from "./ui";
+import { Container, CtaText, PillButton, delay } from "./ui";
 
 const STATS = [
   { value: 2, suffix: "", label: ["Filialen", "in Köln"] },
@@ -48,18 +48,9 @@ export default function Hero() {
           </dl>
         </div>
 
-        {/* The design's teal circle, sun dot and stickers, framed around the 16:9 film. */}
-        <div className="relative aspect-[4/3] w-full max-w-[760px] shrink-0 xl:w-[44%] xl:max-w-[560px]">
-          <div data-reveal="zoom" data-parallax style={delay(200, -0.06)} className="absolute left-[15%] top-[2.5%] aspect-square w-[70%] rounded-full bg-teal" />
-          <div data-reveal="pop" data-parallax style={delay(600, -0.18)} className="absolute left-[4%] top-[1%] aspect-square w-[13%] rounded-full bg-sun" />
-          <div data-reveal="up" style={delay(300)} className="absolute inset-x-0 top-[12.5%] aspect-video">
-            <HeroVideo />
-          </div>
-          <OpaBadge className="-left-[2%] top-[86%] max-sm:left-[2%]" d={900} />
-          <div data-reveal="pop" style={delay(1050)} className="absolute right-[1%] top-[-1%] flex animate-float-slow flex-col gap-1.5 whitespace-nowrap rounded-[16px] bg-white px-3.5 py-2.5 shadow-[0_12px_32px_-4px_rgba(59,0,27,0.18)] sm:rounded-[20px] sm:px-[18px] sm:py-3.5">
-            <p className="text-xs font-bold text-burgundy sm:text-[13px]">Täglich frisch</p>
-            <p className="text-[10px] font-medium text-grey sm:text-[11px]">gebackenes Pita</p>
-          </div>
+        {/* Taller than 16:9 so the film carries the hero; the speaker stays centred in the crop. */}
+        <div data-reveal="up" style={delay(300)} className="aspect-[4/3] w-full max-w-[760px] shrink-0 xl:w-[46%] xl:max-w-[600px]">
+          <HeroVideo />
         </div>
       </Container>
     </section>
