@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Container, CtaText, Eyebrow, PillButton, delay } from "./ui";
+import { Container, CtaText, Eyebrow, Lines, PillButton, delay } from "./ui";
 
 // Only the first answer is in the Figma file; the others are placeholders to be confirmed by Oh My Greece.
-const FAQS = [
+export const FAQS = [
   {
     q: "Wie hoch ist die Investition für einen Oh My Greece Store?",
     a: "Die Höhe der Investition hängt von Größe und Lage deines Standorts ab. Deshalb besprechen wir sie persönlich im kostenlosen Erstgespräch und rechnen dein konkretes Szenario gemeinsam durch.",
@@ -39,24 +39,32 @@ const FAQS = [
   },
 ];
 
-export default function Faq() {
+export type FaqProps = {
+  eyebrow?: string;
+  title?: string;
+  items?: { q: string; a: string }[];
+  ctaTitle?: string;
+  ctaText?: string;
+};
+
+export default function Faq({ eyebrow, title, items, ctaTitle, ctaText }: FaqProps = {}) {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
     <section className="bg-sun py-20 sm:py-[120px]">
       <Container className="flex flex-col items-center gap-12 sm:gap-14">
         <div className="flex flex-col items-center gap-5 text-center">
-          <Eyebrow>HÄUFIG GESTELLTE FRAGEN</Eyebrow>
+          <Eyebrow>{eyebrow ?? "HÄUFIG GESTELLTE FRAGEN"}</Eyebrow>
           <h2 data-reveal="blur" style={delay(100)} className="font-script text-[36px] leading-[1.08] tracking-[-0.02em] text-burgundy sm:text-5xl">
-            Du hast Fragen? Wir haben Antworten.
+            <Lines text={title ?? "Du hast Fragen? Wir haben Antworten."} />
           </h2>
         </div>
 
         <ul className="w-full max-w-[960px] divide-y divide-burgundy/10">
-          {FAQS.map((item, i) => {
+          {(items ?? FAQS).map((item, i) => {
             const isOpen = open === i;
             return (
-              <li key={item.q} data-reveal="up" style={delay(Math.min(i, 4) * 70)} className="py-6">
+              <li key={i} data-reveal="up" style={delay(Math.min(i, 4) * 70)} className="py-6">
                 <h3>
                   <button
                     type="button"
@@ -91,8 +99,8 @@ export default function Faq() {
 
         <div data-reveal="zoom" className="flex w-full max-w-[960px] flex-col items-start gap-5 rounded-[24px] bg-teal-deep px-6 py-7 text-burgundy sm:px-10 sm:py-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-1.5">
-            <p className="font-display text-[22px] font-bold">Noch Fragen offen?</p>
-            <p className="text-sm opacity-50">Schreib uns, wir antworten innerhalb von 24 Stunden.</p>
+            <p className="font-display text-[22px] font-bold">{ctaTitle ?? "Noch Fragen offen?"}</p>
+            <p className="text-sm opacity-50">{ctaText ?? "Schreib uns, wir antworten innerhalb von 24 Stunden."}</p>
           </div>
           <PillButton href="#bewerbung" size="md" className="w-full md:w-auto">
             <CtaText />

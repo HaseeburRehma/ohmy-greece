@@ -198,3 +198,9 @@ next-env.d.ts
 
 # local tooling
 /.claude/
+
+# Framer build intermediates (pnpm build:framer)
+framer/omg.src.css
+framer/omg.raw.css
+framer/omg.generated.css
+framer/omg-css.generated.ts

@@ -73,3 +73,18 @@ export function OpaBadge({ className = "", d = 700 }: { className?: string; d?: 
     </div>
   );
 }
+
+/** Text edited in Framer: each line break in the string becomes a <br>. */
+export function Lines({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <>
+      {lines.map((line, i) => (
+        <span key={i}>
+          {line}
+          {i < lines.length - 1 && <br />}
+        </span>
+      ))}
+    </>
+  );
+}

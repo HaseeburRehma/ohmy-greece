@@ -1,6 +1,6 @@
-import { Container, Eyebrow, delay } from "./ui";
+import { Container, Eyebrow, Lines, delay } from "./ui";
 
-const STEPS = [
+export const STEPS = [
   {
     title: "Bewerbung",
     text: "Du füllst unser kurzes Online-Formular aus. Wir melden uns innerhalb von 24 Stunden bei dir.",
@@ -19,25 +19,26 @@ const STEPS = [
   },
 ];
 
-export default function Process() {
+export type ProcessProps = { eyebrow?: string; title?: string; text?: string; steps?: { title: string; text: string }[] };
+
+export default function Process({ eyebrow, title, text, steps }: ProcessProps = {}) {
   return (
     <section className="bg-ivory py-20 sm:py-[120px]">
       <Container className="flex flex-col items-center gap-12 sm:gap-16">
         <div className="flex flex-col items-center gap-5 text-center">
-          <Eyebrow>DER WEG ZU DEINEM STORE</Eyebrow>
+          <Eyebrow>{eyebrow ?? "DER WEG ZU DEINEM STORE"}</Eyebrow>
           <h2 data-reveal="blur" style={delay(100)} className="font-script text-[36px] leading-[1.08] tracking-[-0.02em] text-burgundy sm:text-5xl">
-            In vier Schritten zur Eröffnung.
+            <Lines text={title ?? "In vier Schritten zur Eröffnung."} />
           </h2>
           <p data-reveal="up" style={delay(200)} className="max-w-[640px] text-base leading-[1.55] text-muted sm:text-[17px]">
-            Von der ersten Idee bis zum Tag der Eröffnung: So begleiten wir dich auf dem Weg zu deinem eigenen Oh My
-            Greece Store.
+            {text ?? "Von der ersten Idee bis zum Tag der Eröffnung: So begleiten wir dich auf dem Weg zu deinem eigenen Oh My Greece Store."}
           </p>
         </div>
 
         <ol className="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-          {STEPS.map((s, i) => (
+          {(steps ?? STEPS).map((s, i) => (
             <li
-              key={s.title}
+              key={i}
               data-reveal="up"
               style={delay(i * 130)}
               className="group flex flex-col items-start gap-5 rounded-[28px] border border-line-warm bg-white p-7 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(59,0,27,0.25)] sm:p-8"

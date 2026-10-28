@@ -27,6 +27,32 @@ const perRecipient = createRateLimiter({ limit: 2, windowMs: 24 * 60 * 60_000 })
 // Backstop against distributed floods: total applications per hour.
 const overall = createRateLimiter({ limit: 120, windowMs: 60 * 60_000, maxKeys: 1 });
 
+/**
+ * Other sites allowed to post the form: the Framer site on ohmygreece.de and Framer's
+ * editor/preview hosts. ALLOWED_ORIGINS (comma-separated) replaces the domain list.
+ */
+const PARTNER_ORIGINS = (process.env.ALLOWED_ORIGINS || "https://www.ohmygreece.de,https://ohmygreece.de")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+const FRAMER_ORIGIN = /^https:\/\/[a-z0-9-]+\.(framer\.app|framer\.website|framercanvas\.com)$/;
+
+function partnerOrigin(origin: string | null) {
+  return !!origin && (PARTNER_ORIGINS.includes(origin) || FRAMER_ORIGIN.test(origin));
+}
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin");
+  if (!partnerOrigin(origin)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin!,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  };
+}
+
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store", ...headers } });
 
@@ -54,49 +80,57 @@ function sameOrigin(req: Request) {
   if (!origin) return req.headers.get("sec-fetch-site") !== "cross-site";
   try {
     const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-    return new URL(origin).host === host;
+    return new URL(origin).host === host || partnerOrigin(origin);
   } catch {
     return false;
   }
 }
 
+/** CORS preflight for the form on the Framer site. */
+export function OPTIONS(req: Request) {
+  const headers = corsHeaders(req);
+  return new Response(null, { status: headers["Access-Control-Allow-Origin"] ? 204 : 403, headers });
+}
+
 export async function POST(req: Request) {
-  if (!sameOrigin(req)) return json({ error: "forbidden" }, 403);
+  const cors = corsHeaders(req);
+  const reply = (data: unknown, status = 200, headers: Record<string, string> = {}) => json(data, status, { ...cors, ...headers });
+  if (!sameOrigin(req)) return reply({ error: "forbidden" }, 403);
   if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json"))
-    return json({ error: "unsupported_media_type" }, 415);
-  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY) return json({ error: "too_large" }, 413);
+    return reply({ error: "unsupported_media_type" }, 415);
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY) return reply({ error: "too_large" }, 413);
 
   const limit = perIp(clientIp(req));
-  if (!limit.ok) return json({ error: "rate_limited" }, 429, { "Retry-After": String(limit.retryAfter) });
+  if (!limit.ok) return reply({ error: "rate_limited" }, 429, { "Retry-After": String(limit.retryAfter) });
 
   const raw = await readCapped(req, MAX_BODY);
-  if (raw === null) return json({ error: "too_large" }, 413);
+  if (raw === null) return reply({ error: "too_large" }, 413);
 
   let body: unknown;
   try {
     body = JSON.parse(raw);
   } catch {
-    return json({ error: "invalid_body" }, 400);
+    return reply({ error: "invalid_body" }, 400);
   }
-  if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "invalid_body" }, 400);
+  if (!body || typeof body !== "object" || Array.isArray(body)) return reply({ error: "invalid_body" }, 400);
   const data = body as Record<string, unknown>;
 
   // Bots: filled the hidden field or "completed" five steps in under 3 s.
   // Answer like a success so they don't learn what tripped them.
   const elapsed = Number(data.elapsedMs);
-  if (String(data.website ?? "").trim() || !Number.isFinite(elapsed) || elapsed < MIN_FILL_MS) return json({ ok: true });
+  if (String(data.website ?? "").trim() || !Number.isFinite(elapsed) || elapsed < MIN_FILL_MS) return reply({ ok: true });
 
   const parsed = parseApplication(data);
-  if (!parsed.ok) return json({ error: "invalid_fields", fields: Object.keys(parsed.errors) }, 422);
+  if (!parsed.ok) return reply({ error: "invalid_fields", fields: Object.keys(parsed.errors) }, 422);
   const app = parsed.data;
 
-  if (!overall("all").ok) return json({ error: "rate_limited" }, 429, { "Retry-After": "600" });
+  if (!overall("all").ok) return reply({ error: "rate_limited" }, 429, { "Retry-After": "600" });
   const sendConfirmation = perRecipient(app.email).ok;
 
   const mail = mailTransport();
   if (!mail && !sheetConfigured()) {
     console.error("[bewerbung] neither mail nor sheet is configured; application from", app.city);
-    return json({ error: "not_configured" }, 503);
+    return reply({ error: "not_configured" }, 503);
   }
 
   const receivedAt = new Date();
@@ -130,7 +164,7 @@ export async function POST(req: Request) {
     }),
   ]);
 
-  if (!mailed && sheet !== "saved") return json({ error: "send_failed" }, 502);
+  if (!mailed && sheet !== "saved") return reply({ error: "send_failed" }, 502);
 
   if (mail && sendConfirmation) {
     try {
@@ -147,5 +181,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return json({ ok: true });
+  return reply({ ok: true });
 }

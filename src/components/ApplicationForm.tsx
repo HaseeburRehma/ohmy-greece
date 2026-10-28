@@ -206,7 +206,13 @@ function BackButton({ onClick, disabled, compact = false }: { onClick: () => voi
   );
 }
 
-export default function ApplicationForm({ onScene }: { onScene?: (scene: number) => void }) {
+type FormProps = {
+  onScene?: (scene: number) => void;
+  /** Where applications are posted; absolute when the form runs on another site (Framer). */
+  endpoint?: string;
+};
+
+export default function ApplicationForm({ onScene, endpoint = "/api/bewerbung" }: FormProps) {
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
@@ -280,7 +286,7 @@ export default function ApplicationForm({ onScene }: { onScene?: (scene: number)
   async function submit() {
     setSendState("sending");
     try {
-      const res = await fetch("/api/bewerbung", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...a, website: honeypot, elapsedMs: Date.now() - startedAt.current }),
@@ -573,7 +579,7 @@ export default function ApplicationForm({ onScene }: { onScene?: (scene: number)
   );
 }
 
-export function ApplicationSection() {
+export function ApplicationSection({ endpoint }: { endpoint?: string } = {}) {
   const [scene, setScene] = useState(0);
   return (
     <section id="bewerbung" className="scroll-mt-6 bg-ivory py-20 sm:py-[120px]">
@@ -596,7 +602,7 @@ export function ApplicationSection() {
           </div>
           <OpaBadge className="left-0 top-[83.33%]" d={650} />
         </div>
-        <ApplicationForm onScene={setScene} />
+        <ApplicationForm onScene={setScene} endpoint={endpoint} />
       </div>
     </section>
   );

@@ -26,7 +26,7 @@ vi.mock("@/lib/lead-sheet", () => ({
   }),
 }));
 
-const { POST } = await import("@/app/api/bewerbung/route");
+const { POST, OPTIONS } = await import("@/app/api/bewerbung/route");
 
 let ipCounter = 0;
 const freshIp = () => `203.0.113.${++ipCounter}`;
@@ -224,5 +224,43 @@ describe("POST /api/bewerbung", () => {
   it("returns 503 when neither mail nor sheet is configured", async () => {
     mailOn = false;
     expect((await post({ ...valid, email: "none@example.com" })).status).toBe(503);
+  });
+});
+
+describe("cross-origin posts from the Framer site", () => {
+  const preflight = (origin: string) =>
+    OPTIONS(new Request("http://localhost:3250/api/bewerbung", { method: "OPTIONS", headers: { origin, host: "localhost:3250" } }));
+
+  it("answers the preflight for ohmygreece.de and Framer previews only", async () => {
+    for (const origin of ["https://www.ohmygreece.de", "https://ohmygreece.de", "https://omg-preview.framer.app"]) {
+      const res = await preflight(origin);
+      expect(res.status, origin).toBe(204);
+      expect(res.headers.get("access-control-allow-origin")).toBe(origin);
+      expect(res.headers.get("access-control-allow-headers")).toBe("Content-Type");
+    }
+    for (const origin of ["https://evil.example", "https://www.ohmygreece.de.evil.example", "http://www.ohmygreece.de", "https://framer.app.evil.example"]) {
+      const res = await preflight(origin);
+      expect(res.status, origin).toBe(403);
+      expect(res.headers.get("access-control-allow-origin")).toBeNull();
+    }
+  });
+
+  it("accepts an application from www.ohmygreece.de and returns CORS headers", async () => {
+    const res = await post({ ...valid, email: "framer@example.com" }, { headers: { origin: "https://www.ohmygreece.de" } });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("access-control-allow-origin")).toBe("https://www.ohmygreece.de");
+    expect(res.headers.get("vary")).toBe("Origin");
+  });
+
+  it("still rejects other sites, without CORS headers", async () => {
+    const res = await post(valid, { headers: { origin: "https://evil.example" } });
+    expect(res.status).toBe(403);
+    expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
+  it("keeps CORS headers on error answers so the form can show them", async () => {
+    const res = await post({ ...valid, email: "nope" }, { headers: { origin: "https://www.ohmygreece.de" } });
+    expect(res.status).toBe(422);
+    expect(res.headers.get("access-control-allow-origin")).toBe("https://www.ohmygreece.de");
   });
 });

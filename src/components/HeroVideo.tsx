@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const POSTER = "/videos/franchise-video-poster.jpg";
+export type VideoSources = { mobile?: string; desktop?: string; poster?: string };
+
+const DEFAULT_SOURCES = {
+  mobile: "/videos/franchise-video-720.mp4",
+  desktop: "/videos/franchise-video-1080.mp4",
+  poster: "/videos/franchise-video-poster.jpg",
+};
 
 /** Muted preview until the visitor asks for sound, then the full film from the start. */
 type Mode = "preview" | "sound" | "idle";
@@ -24,7 +30,8 @@ function PlayIcon({ className = "" }: { className?: string }) {
   );
 }
 
-export default function HeroVideo() {
+export default function HeroVideo({ sources }: { sources?: VideoSources }) {
+  const src = { ...DEFAULT_SOURCES, ...sources };
   const ref = useRef<HTMLVideoElement>(null);
   const [mode, setMode] = useState<Mode>("idle");
 
@@ -71,7 +78,7 @@ export default function HeroVideo() {
       <video
         ref={ref}
         className="size-full object-cover"
-        poster={POSTER}
+        poster={src.poster}
         loop={mode !== "sound"}
         playsInline
         muted
@@ -79,8 +86,8 @@ export default function HeroVideo() {
         controls={mode === "sound"}
         aria-label="Video: Oh My Greece stellt das Franchise-Konzept vor"
       >
-        <source src="/videos/franchise-video-720.mp4" type="video/mp4" media="(max-width: 767px)" />
-        <source src="/videos/franchise-video-1080.mp4" type="video/mp4" />
+        <source src={src.mobile} type="video/mp4" media="(max-width: 767px)" />
+        <source src={src.desktop} type="video/mp4" />
       </video>
 
       {mode !== "sound" && (
