@@ -44,6 +44,43 @@ for (const width of [320, 375, 768, 1024, 1280, 1440]) {
   });
 }
 
+test("hero film autoplays muted, then plays from the start with sound on request", async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto("/");
+  const video = page.locator("section video").first();
+  await expect(video).toHaveAttribute("poster", /franchise-video-poster/);
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused && v.muted && v.currentTime > 0.3), { timeout: 15_000 }).toBe(true);
+  // The silent preview pauses once it is scrolled out of view.
+  await page.evaluate(() => window.scrollTo({ top: 4000, behavior: "instant" }));
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(false);
+
+  await page.getByRole("button", { name: "Mit Ton ansehen" }).click();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.muted && !v.paused && v.controls && !v.loop)).toBe(true);
+  expect(await video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(3);
+  await expect(page.getByRole("button", { name: "Mit Ton ansehen" })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("hero film waits for a tap when reduced motion is requested", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const video = page.locator("section video").first();
+  const play = page.getByRole("button", { name: "Video mit Ton abspielen" });
+  await expect(play).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(await video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  await play.click();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused && !v.muted)).toBe(true);
+});
+
+test("/franchise leads to the franchise page", async ({ page }) => {
+  await page.goto("/franchise");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Werde Teil der Oh My Greece");
+});
+
 test("security headers are sent and the framework is not advertised", async ({ request }) => {
   const res = await request.get("/");
   const h = res.headers();

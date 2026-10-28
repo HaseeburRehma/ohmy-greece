@@ -285,7 +285,13 @@ export default function ApplicationForm({ onScene }: { onScene?: (scene: number)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...a, website: honeypot, elapsedMs: Date.now() - startedAt.current }),
       });
-      if (res.ok) return setDone(true);
+      if (res.ok) {
+        // Meta Pixel "Lead" per the brief; a no-op until the pixel (behind cookie consent) is on the page.
+        (window as Window & { fbq?: (...args: unknown[]) => void }).fbq?.("track", "Lead", {
+          content_name: "Franchise-Bewerbung",
+        });
+        return setDone(true);
+      }
       setSendState(res.status === 429 ? "rate_limited" : "error");
     } catch {
       setSendState("error");

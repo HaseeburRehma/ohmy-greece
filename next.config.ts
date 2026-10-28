@@ -41,6 +41,10 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
+  // The brief calls this page ohmygreece.de/franchise; keep that path working here too.
+  async redirects() {
+    return [{ source: "/franchise", destination: "/", permanent: false }];
+  },
   async headers() {
     return [
       {
@@ -57,6 +61,11 @@ const nextConfig: NextConfig = {
             value: csp({ style: "https://fonts.googleapis.com", font: "https://fonts.gstatic.com" }),
           },
         ],
+      },
+      {
+        // ~30 MB films: let browsers and the CDN keep them; the poster revalidates with them.
+        source: "/videos/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }],
       },
       {
         source: "/images/:path*",

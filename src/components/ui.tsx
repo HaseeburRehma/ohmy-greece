@@ -42,7 +42,7 @@ export function PillButton({ href, children, variant = "sun", size = "lg", class
     outline: "border-[1.5px] border-burgundy text-burgundy font-semibold hover:bg-burgundy hover:text-white",
   };
   const sizes = {
-    lg: "px-6 py-4 text-[15px] sm:px-7 sm:py-[18px] sm:text-base",
+    lg: "px-4 py-4 text-[14px] tracking-[-0.01em] min-[400px]:px-5 sm:px-7 sm:py-[18px] sm:text-base sm:tracking-normal",
     md: "px-6 py-3.5 text-[15px]",
   };
   return (

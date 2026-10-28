@@ -78,5 +78,13 @@ multiple instances, move the limiter to Redis/Upstash.
   five steps with their own photo each, plus the "Danke" screen. Answers on the
   choice steps auto-advance; step 1 continues on Enter or when the field is left.
   FAQ answers 2–8 are drafts to be confirmed by Oh My Greece.
+- The hero plays the franchise film (`public/videos/`, 1080p + 720p H.264 for
+  phones, re-encoded from the 4K master "OMG VSL Final.mp4"). It starts muted
+  by script (not for reduced-motion or data-saver visitors), pauses offscreen,
+  and "Mit Ton ansehen" restarts it from the beginning with sound and controls.
+  To swap the film, re-encode with `-movflags +faststart` and keep the file names.
+- The form copy follows TyloTech's "Form Content Brief". On success it fires the
+  Meta Pixel `Lead` event once a pixel (behind cookie consent) is on the page.
+- `/franchise` redirects to `/`.
 - `Motion.tsx` must stay inside `page.tsx` (not the root layout) so it runs only
   after the page content has hydrated.

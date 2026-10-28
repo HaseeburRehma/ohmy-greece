@@ -56,7 +56,7 @@ check("forged XFF prefix still rate-limited", spoof.slice(5).every((s) => s === 
 check("email preview hidden in prod → 404", (await fetch(`${BASE}/email-preview?t=team`)).status === 404);
 check("image proxy refuses remote URLs", (await fetch(`${BASE}/_next/image?url=${encodeURIComponent("https://evil.example/x.png")}&w=640&q=75`)).status >= 400);
 check("image proxy refuses path traversal", (await fetch(`${BASE}/_next/image?url=${encodeURIComponent("/../../etc/passwd")}&w=640&q=75`)).status >= 400);
-check("image proxy refuses odd widths", (await fetch(`${BASE}/_next/image?url=%2Fimages%2Fhero-photo.jpg&w=13&q=75`)).status >= 400);
+check("image proxy refuses odd widths", (await fetch(`${BASE}/_next/image?url=%2Fimages%2Fquality-big.jpg&w=13&q=75`)).status >= 400);
 const nf = await fetch(`${BASE}/../../etc/passwd`);
 check("path traversal → 404", nf.status === 404);
 check("source maps not served", (await fetch(`${BASE}/_next/static/chunks/main.js.map`)).status === 404);

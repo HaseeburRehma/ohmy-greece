@@ -51,7 +51,7 @@ export default function Benefits() {
               key={b.title}
               data-reveal="up"
               style={delay((i % 3) * 110)}
-              className="group flex flex-col items-start gap-5 rounded-[24px] border border-line bg-white p-7 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(59,0,27,0.25)] sm:p-8"
+              className="group flex flex-col items-start gap-4 rounded-[24px] border border-line bg-white p-6 sm:gap-5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(59,0,27,0.25)] sm:p-8"
             >
               <span className={`flex rounded-[16px] px-3.5 py-3 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${i % 2 === 0 ? "bg-teal" : "bg-sun"}`}>
                 <Image src={`/images/icons/benefit-${i + 1}.svg`} alt="" width={26} height={26} />

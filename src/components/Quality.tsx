@@ -44,7 +44,9 @@ export default function Quality() {
         <div className="flex w-full flex-1 flex-col items-start gap-6 sm:gap-7">
           <Eyebrow>QUALITÄT &amp; FRISCHE</Eyebrow>
           <h2 data-reveal="blur" style={delay(100)} className="font-script text-[34px] leading-[1.08] tracking-[-0.02em] text-burgundy sm:text-[44px] xl:text-[41px]">
-            Echte Zutaten. Echtes Handwerk. Echtes <br className="hidden xl:inline" />
+            Echte Zutaten. <br className="sm:hidden" />
+            Echtes Handwerk. <br className="sm:hidden" />
+            Echtes <br className="hidden xl:inline" />
             Griechenland.
           </h2>
           <p data-reveal="up" style={delay(200)} className="text-base leading-[1.65] text-muted">
