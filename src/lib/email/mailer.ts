@@ -63,8 +63,9 @@ async function sendWithResend(mail: Mail) {
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { name?: string } | null;
-    throw new Error(`resend ${res.status} ${body?.name ?? ""}`);
+    // Resend's message says why (e.g. an unverified sender domain); it never contains the key.
+    const body = (await res.json().catch(() => null)) as { name?: string; message?: string } | null;
+    throw new Error(`resend ${res.status} ${body?.name ?? ""}: ${String(body?.message ?? "").slice(0, 200)}`);
   }
 }
 
