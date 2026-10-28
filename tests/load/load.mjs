@@ -35,8 +35,8 @@ async function run(label, total, conc, fn) {
 }
 
 const pages = await run("GET /", TOTAL, CONC, () => fetch(BASE).then(async (r) => (await r.arrayBuffer(), r)));
-const imgs = await run("GET /_next/image hero", 600, 60, () =>
-  fetch(`${BASE}/_next/image?url=%2Fimages%2Fquality-big.jpg&w=750&q=75`, { headers: { accept: "image/avif,image/webp" } }).then(async (r) => (await r.arrayBuffer(), r)),
+const imgs = await run("GET pre-built photo", 600, 60, () =>
+  fetch(`${BASE}/images/_w/quality-big-828.webp`).then(async (r) => (await r.arrayBuffer(), r)),
 );
 
 const valid = {

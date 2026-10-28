@@ -33,6 +33,9 @@ test("loads without console errors or hydration warnings, top to bottom", async 
   await page.waitForFunction(`(${shown})().every((i) => i.complete)`);
   const broken = await page.evaluate(`(${shown})().filter((i) => !i.naturalWidth).map((i) => i.src)`);
   expect(broken).toEqual([]);
+  // Photos never depend on the metered on-demand optimizer.
+  const viaOptimizer = await page.evaluate(() => [...document.images].filter((i) => i.currentSrc.includes("/_next/image")).length);
+  expect(viaOptimizer).toBe(0);
 });
 
 for (const width of [320, 375, 768, 1024, 1280, 1440]) {

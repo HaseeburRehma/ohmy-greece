@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { DEVICE_SIZES, IMAGE_SIZES } from "./src/lib/image-widths.mjs";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -37,9 +38,13 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // Photos are pre-built WebP sizes (pnpm images) served as static files: Vercel's on-demand
+  // optimizer is metered and answers 402 once the plan's quota is used up.
   images: {
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 60 * 60 * 24 * 30,
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
+    deviceSizes: DEVICE_SIZES,
+    imageSizes: IMAGE_SIZES,
   },
   // The brief calls this page ohmygreece.de/franchise; keep that path working here too.
   async redirects() {

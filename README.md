@@ -86,5 +86,9 @@ multiple instances, move the limiter to Redis/Upstash.
 - The form copy follows TyloTech's "Form Content Brief". On success it fires the
   Meta Pixel `Lead` event once a pixel (behind cookie consent) is on the page.
 - `/franchise` redirects to `/`.
+- Photos don't use Vercel's on-demand image optimizer (metered; it answers 402
+  once the plan's quota is used up). `pnpm images` pre-builds WebP sizes into
+  `public/images/_w/`, and `src/lib/image-loader.ts` points `next/image` at
+  them. Run `pnpm images` after adding or replacing a photo in `public/images`.
 - `Motion.tsx` must stay inside `page.tsx` (not the root layout) so it runs only
   after the page content has hydrated.
