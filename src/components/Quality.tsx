@@ -51,7 +51,7 @@ export default function Quality({ eyebrow, title, text, points, images, badgeLab
           </div>
         </div>
 
-        <div className="flex w-full flex-1 flex-col items-start gap-6 sm:gap-7">
+        <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-6 sm:gap-7">
           <Eyebrow>{eyebrow ?? "QUALITÄT & FRISCHE"}</Eyebrow>
           <h2 data-reveal="blur" style={delay(100)} className="font-script text-[34px] leading-[1.08] tracking-[-0.02em] text-burgundy sm:text-[44px] xl:text-[41px]">
             {title ? (

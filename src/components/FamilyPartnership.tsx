@@ -25,7 +25,7 @@ export default function FamilyPartnership({ eyebrow, title, text, note, image }:
           </div>
         </div>
 
-        <div className="flex w-full flex-1 flex-col items-start gap-6 sm:gap-7">
+        <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-6 sm:gap-7">
           <Eyebrow>{eyebrow ?? "MEHR ALS EIN PARTNER"}</Eyebrow>
           <h2 data-reveal="blur" style={delay(100)} className="font-script text-[36px] leading-[1.05] tracking-[-0.02em] text-burgundy sm:text-5xl xl:text-[47px]">
             {title ? (
@@ -41,11 +41,11 @@ export default function FamilyPartnership({ eyebrow, title, text, note, image }:
             {text ??
               "Wir verstehen Franchise anders. Du bekommst keinen Vertrag und wirst dann allein gelassen. Wir sind in der Eröffnungsphase vor Ort, helfen beim Recruiting deines Teams und teilen alles, was wir gelernt haben. Dein Erfolg ist unser Erfolg."}
           </p>
-          <div data-reveal="up" style={delay(300)} className="flex w-full flex-col items-start gap-4 pt-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center xl:flex-nowrap">
+          <div data-reveal="up" style={delay(300)} className="flex w-full flex-col items-start gap-4 pt-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center min-[1440px]:flex-nowrap">
             <PillButton href="#bewerbung" variant="burgundy" className="w-full sm:w-auto">
               <CtaText />
             </PillButton>
-            <p className="text-[13px] font-medium text-burgundy xl:whitespace-nowrap">{note ?? "Unverbindlich, Antwort innerhalb von 24 Stunden"}</p>
+            <p className="text-[13px] font-medium text-burgundy min-[1440px]:whitespace-nowrap">{note ?? "Unverbindlich, Antwort innerhalb von 24 Stunden"}</p>
           </div>
         </div>
       </Container>

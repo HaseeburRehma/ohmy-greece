@@ -67,6 +67,13 @@ const base = `@import url("https://fonts.googleapis.com/css2?family=Inter:wght@4
 .omg > section:first-child { padding-top: 24px; }
 @container omg (width >= 40rem) { .omg > section:first-child { padding-top: 40px; } }
 @container omg (width >= 80rem) { .omg > section:first-child { padding-top: 56px; min-height: 0; } }
+/* Fineday runs wider than the Vercel fallback font: balance heading lines (no lone "für")
+   and step headings down a little on small phones. */
+.omg :is(h1, h2, h3) { text-wrap: balance; }
+@container omg (width < 400px) {
+  .omg h2.font-script { font-size: 31px; }
+  .omg input::placeholder { font-size: 14px; }
+}
 `;
 const css = (await esbuild.transform(base + responsive(unlayer(read("framer/omg.raw.css"))), { loader: "css", minify: true })).code;
 writeFileSync("framer/omg.generated.css", css);
