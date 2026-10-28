@@ -9,10 +9,22 @@ const oswald = Oswald({ variable: "--font-oswald", subsets: ["latin"], weight: [
 const rubik = Rubik({ variable: "--font-rubik", subsets: ["latin"], weight: ["500", "600"] });
 const kaushan = Kaushan_Script({ variable: "--font-kaushan", subsets: ["latin"], weight: "400" });
 
+const title = "Franchise – Oh My Greece";
+const description =
+  "Werde Teil der Oh My Greece Familie. Eröffne deinen eigenen Store mit fertigem Konzept, 100 % Halal-Qualität und griechischen Original-Rezepten.";
+// Share previews need absolute image URLs; on Vercel the production domain is the fallback.
+const siteUrl =
+  process.env.SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
-  title: "Franchise – Oh My Greece",
-  description:
-    "Werde Teil der Oh My Greece Familie. Eröffne deinen eigenen Store mit fertigem Konzept, 100 % Halal-Qualität und griechischen Original-Rezepten.",
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
+  alternates: { canonical: "/" },
+  // The share image itself comes from app/opengraph-image.jpg and app/twitter-image.jpg.
+  openGraph: { type: "website", locale: "de_DE", siteName: "Oh My Greece", title, description, url: "/" },
+  twitter: { card: "summary_large_image", title, description },
 };
 
 export const viewport: Viewport = {

@@ -81,6 +81,20 @@ test("/franchise leads to the franchise page", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Werde Teil der Oh My Greece");
 });
 
+test("link previews get a share image, title and description", async ({ page, request }) => {
+  await page.goto("/");
+  const meta = (sel: string) => page.locator(sel).getAttribute("content");
+  const image = await meta('meta[property="og:image"]');
+  expect(image).toMatch(/^https?:\/\/.+opengraph-image/);
+  expect(await meta('meta[property="og:image:width"]')).toBe("1200");
+  expect(await meta('meta[property="og:image:height"]')).toBe("630");
+  expect(await meta('meta[property="og:title"]')).toBe("Franchise – Oh My Greece");
+  expect(await meta('meta[name="twitter:card"]')).toBe("summary_large_image");
+  const res = await request.get(new URL(image!).pathname + new URL(image!).search);
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toBe("image/jpeg");
+});
+
 test("security headers are sent and the framework is not advertised", async ({ request }) => {
   const res = await request.get("/");
   const h = res.headers();
